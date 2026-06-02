@@ -7,6 +7,8 @@ import {
   fetchGame, 
   updateGameMove, 
   subscribeToGame,
+  getTotalGamesCount,
+  fetchUserGamesHistory,
   supabase
 } from './utils/supabaseClient';
 import AuthLink from './components/AuthLink';
@@ -46,6 +48,8 @@ export default function App() {
   const [boardOrientation, setBoardOrientation] = useState('w'); // 'w' or 'b'
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState({ white: null, black: null });
+  const [totalGames, setTotalGames] = useState(0);
+  const [historyGames, setHistoryGames] = useState([]);
 
   // --- ENGINE REFERENCE ---
   // We initialize the chess.js engine once and store it in a Ref.
@@ -53,7 +57,7 @@ export default function App() {
   const chessRef = useRef(new Chess());
 
   // ====================================================================
-  // Side-Effect 1: Authenticaton on Load
+  // Side-Effect 1: Authentication on Load
   // ====================================================================
   useEffect(() => {
     async function initAuth() {
@@ -107,6 +111,9 @@ export default function App() {
 
     // Establish WebSocket subscription
     const subscription = subscribeToGame(gameCode, (updatedGame) => {
+      // Sync player roles in real-time
+      setPlayers({ white: updatedGame.white_player_id, black: updatedGame.black_player_id });
+
       // Check if received FEN is newer than our local FEN
       if (updatedGame.fen !== fen) {
         setFen(updatedGame.fen);
@@ -127,10 +134,23 @@ export default function App() {
   }, [gameCode, fen]);
 
   // ====================================================================
-  // ROOM ACTIONS
+  // Side-Effect 4: Fetch Stats & History on User Load / Room Reset
   // ====================================================================
-
-  // Load game from database
+  useEffect(() => {
+    async function loadLobbyStats() {
+      if (!gameCode) {
+        const { count } = await getTotalGamesCount();
+        setTotalGames(count);
+        if (user?.id) {
+          const { games } = await fetchUserGamesHistory(user.id);
+          setHistoryGames(games);
+        }
+      }
+    }
+    loadLobbyStats();
+  }, [user, gameCode]);  // ====================================================================
+  // ROOM ACTIONS
+  // ====================================================================  // Load game from database and handle user role assignment
   const loadGameRoom = async (code) => {
     setLoading(true);
     const { game, error } = await fetchGame(code);
@@ -151,10 +171,40 @@ export default function App() {
     
     // Sync the local engine with loaded position
     chessRef.current.load(game.fen);
-    
+
+    // Dynamic slot assignment
+    const { data: { session } } = await supabase.auth.getSession();
+    const activeUserId = session?.user?.id || user?.id || null;
+
+    let currentWhite = game.white_player_id;
+    let currentBlack = game.black_player_id;
+
+    if (activeUserId) {
+      if (!currentWhite) {
+        // Assign creator/joining user to empty White slot
+        currentWhite = activeUserId;
+        await updateGameMove(code, game.fen, game.pgn, game.status, { white_player_id: activeUserId });
+        setBoardOrientation('w');
+      } else if (currentWhite === activeUserId) {
+        setBoardOrientation('w');
+      } else if (!currentBlack) {
+        // Assign opponent to empty Black slot
+        currentBlack = activeUserId;
+        await updateGameMove(code, game.fen, game.pgn, game.status, { black_player_id: activeUserId });
+        setBoardOrientation('b');
+      } else if (currentBlack === activeUserId) {
+        setBoardOrientation('b');
+      } else {
+        // Spectator
+        setBoardOrientation('w');
+      }
+    } else {
+      setBoardOrientation('w');
+    }
+
+    setPlayers({ white: currentWhite, black: currentBlack });
     setLoading(false);
   };
-
   // Helper to generate a random 6-character room shortcode
   const generateRandomCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Cleaned characters (no confusing 0, O, 1, I)
@@ -196,15 +246,26 @@ export default function App() {
   // CHESS GAMEPLAY HANDLERS
   // ====================================================================
 
-  // Fired when player drags/taps a piece to make a move on the Chessboard component
   const handleMakeMove = async (moveObj) => {
     try {
+      // Role & turn enforcement
+      const activeColor = chessRef.current.turn(); // 'w' or 'b'
+      const isWhiteTurn = activeColor === 'w';
+
+      if (isWhiteTurn && user?.id !== players.white) {
+        console.warn("Move blocked: It is White's turn, but you are not the White player.");
+        return;
+      }
+      if (!isWhiteTurn && user?.id !== players.black) {
+        console.warn("Move blocked: It is Black's turn, but you are not the Black player.");
+        return;
+      }
+
       // Validate move locally using chess.js engine
       const move = chessRef.current.move(moveObj);
       
       // If move is illegal, block it
       if (!move) return;
-
       // Extract new states
       const newFen = chessRef.current.fen();
       const newPgn = chessRef.current.pgn();
@@ -266,18 +327,22 @@ export default function App() {
   const handleFlipBoard = () => {
     setBoardOrientation(prev => prev === 'w' ? 'b' : 'w');
   };
-
-  // Parse moves history strings into simple arrays for PGN display
+  // Parse moves history strings into simple arrays for PGN display (stripping headers)
   const getMovesList = () => {
     if (!pgn) return [];
+    
+    // Strip metadata headers (lines starting with [)
+    const cleanPgn = pgn
+      .split('\n')
+      .filter(line => !line.trim().startsWith('['))
+      .join(' ');
+
     // Parses PGN string (e.g. "1. e4 e5 2. Nf3") into moves array
-    // Remaps out the numbering e.g. "1. e4 e5" => ["e4", "e5"]
-    return pgn
+    return cleanPgn
       .replace(/\d+\.\s+/g, '') // remove "1. ", "2. "
       .split(/\s+/) // split on whitespace
       .filter(m => m.trim().length > 0);
   };
-
   const movesList = getMovesList();
 
   // --- GAME OVER MODAL CALCULATORS ---
@@ -353,7 +418,6 @@ export default function App() {
       {/* 2. GAME OVER OVERLAY */}
       {getGameOverOverlay()}
 
-      {/* 3. LOBBY OR GAMEPLAY VIEW */}
       {!gameCode ? (
         // ====================================================================
         // VIEW A: Home Lobby Screen
@@ -364,6 +428,13 @@ export default function App() {
           <p className="lobby-desc">
             No emails, no passwords. Create a chess room instantly, share the unique URL shortcode with a friend, and play in real-time.
           </p>
+
+          {totalGames > 0 && (
+            <div style={{ display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: '6px', background: 'rgba(226, 193, 117, 0.1)', border: '1px solid rgba(226, 193, 117, 0.2)', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600 }}>
+              <Sparkles size={12} />
+              <span>{totalGames.toLocaleString()} games played globally</span>
+            </div>
+          )}
 
           <button 
             className="btn btn-primary" 
@@ -379,6 +450,40 @@ export default function App() {
               Looking to resume a game? Paste the unique share URL into your browser!
             </span>
           </div>
+
+          {/* User History List */}
+          {historyGames.length > 0 && (
+            <div style={{ textAlign: 'left', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', marginTop: '10px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Your Recent Games</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                {historyGames.map((g) => (
+                  <div 
+                    key={g.id} 
+                    onClick={() => {
+                      const newUrl = `${window.location.origin}/?game=${g.code}`;
+                      window.history.pushState({ path: newUrl }, '', newUrl);
+                      loadGameRoom(g.code);
+                    }} 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      padding: '8px 12px', 
+                      background: 'rgba(255, 255, 255, 0.03)', 
+                      border: '1px solid rgba(255, 255, 255, 0.05)', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer'
+                    }} 
+                    className="history-item-hover"
+                  >
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-gold)' }}>{g.code}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Status: {g.status.replace('_', ' ')}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(g.updated_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         // ====================================================================
@@ -409,13 +514,32 @@ export default function App() {
               </div>
             </div>
 
+            {/* Dynamic Role Indicator Badge */}
+            <div style={{ 
+              fontSize: '12px', 
+              color: 'var(--text-secondary)', 
+              background: 'rgba(255, 255, 255, 0.03)', 
+              border: '1px solid rgba(255, 255, 255, 0.05)', 
+              borderRadius: '20px', 
+              padding: '4px 12px', 
+              marginBottom: '10px', 
+              display: 'flex', 
+              gap: '4px',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 500
+            }}>
+              {user?.id === players.white && <span>⚪ Playing as <strong style={{ color: 'var(--text-primary)' }}>White</strong></span>}
+              {user?.id === players.black && <span>⚫ Playing as <strong style={{ color: 'var(--text-primary)' }}>Black</strong></span>}
+              {user?.id !== players.white && user?.id !== players.black && <span style={{ color: 'var(--accent-gold)' }}>👁️ Spectating (Read-Only Mode)</span>}
+            </div>
+
             {/* Custom Chessboard Grid Component */}
             <Chessboard 
               gameEngine={chessRef.current}
               fen={fen}
               orientation={boardOrientation}
               onMakeMove={handleMakeMove}
-              disabled={gameStatus !== 'active'}
+              disabled={gameStatus !== 'active' || user?.id !== (chessRef.current.turn() === 'w' ? players.white : players.black)}
             />
 
             {/* Helper Utility Buttons directly below the board */}
@@ -440,13 +564,13 @@ export default function App() {
 
           {/* Column 2: Game Controls and Move History panels */}
           <div className="sidebar-panel">
-            {/* Share, Resign, and Reset controls panel */}
+            {/* Share, Resign, and Reset controls panel - allowed for either player at any time */}
             <GameControls 
               gameCode={gameCode}
               onResign={handleResign}
               onDraw={handleDraw}
               onNewGame={handleStartNewGame}
-              disabled={gameStatus !== 'active'}
+              disabled={gameStatus !== 'active' || (user?.id !== players.white && user?.id !== players.black)}
             />
 
             {/* Auto-scrolling algebraic moves list panel */}

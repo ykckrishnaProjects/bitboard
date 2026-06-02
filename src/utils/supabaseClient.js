@@ -196,3 +196,43 @@ export function subscribeToGame(code, onUpdate) {
   // Return the subscription so the React component can call subscription.unsubscribe() on unmount
   return subscription;
 }
+
+/**
+ * 8. Get Total Games Count
+ * Returns the exact count of all matches registered in the 'games' table.
+ */
+export async function getTotalGamesCount() {
+  try {
+    const { count, error } = await supabase
+      .from('games')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) throw error;
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error fetching total games count:', error.message);
+    return { count: 0, error };
+  }
+}
+
+/**
+ * 9. Fetch User Games History
+ * Returns active and completed games where the user is either the White or Black player.
+ */
+export async function fetchUserGamesHistory(userId) {
+  try {
+    if (!userId) return { games: [], error: null };
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .or(`white_player_id.eq.${userId},black_player_id.eq.${userId}`)
+      .order('updated_at', { ascending: false })
+      .limit(10); // Limit to top 10 recent games for clean UI
+    
+    if (error) throw error;
+    return { games: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching user games history:', error.message);
+    return { games: [], error };
+  }
+}

@@ -1,31 +1,30 @@
-/* --- Visual Design System & Glassmorphism Tokens --- */
 :root {
-  /* Curated HSL Color Scheme */
-  --bg-dark: hsl(222, 47%, 7%);
-  --bg-gradient-start: hsl(224, 71%, 4%);
-  --bg-gradient-end: hsl(220, 40%, 10%);
+  /* Premium Bobby Fischer Light Theme Matching Chessboard Aesthetics */
+  --bg-dark: #ECEAE3;
+  --bg-gradient-start: #F5F4F0;
+  --bg-gradient-end: #E4E1D8;
   
-  --panel-glass: rgba(13, 17, 30, 0.65);
-  --panel-glass-border: rgba(255, 255, 255, 0.08);
-  --panel-glass-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --panel-glass: rgba(255, 255, 255, 0.75);
+  --panel-glass-border: rgba(112, 146, 124, 0.22);
+  --panel-glass-glow: 0 12px 32px 0 rgba(112, 146, 124, 0.12);
   
-  --text-primary: hsl(210, 40%, 98%);
-  --text-secondary: hsl(215, 20%, 65%);
-  --text-muted: hsl(215, 16%, 47%);
+  --text-primary: #2C3531;
+  --text-secondary: #4E5E58;
+  --text-muted: #7A8E85;
   
-  --accent-gold: hsl(45, 100%, 60%);
-  --accent-gold-glow: rgba(245, 158, 11, 0.45);
+  --accent-gold: #B08D2C;
+  --accent-gold-glow: rgba(176, 141, 44, 0.35);
   
-  --accent-emerald: hsl(150, 84%, 40%);
-  --accent-ruby: hsl(350, 84%, 55%);
+  --accent-emerald: #2E7D32;
+  --accent-ruby: #C62828;
   
   /* Chessboard Squares - Bobby Fischer Series Classic Tournament Vinyl */
   --sq-light: #F0F0E8; /* Softer vinyl cream */
   --sq-dark: #70927C;  /* Muted pastel forest/sage green */
-  --sq-selected: rgba(245, 158, 11, 0.35);
-  --sq-highlight: rgba(147, 197, 253, 0.3);
-  --sq-check: rgba(239, 68, 68, 0.55);
-  --sq-last-move: rgba(16, 185, 129, 0.25);
+  --sq-selected: rgba(176, 141, 44, 0.3);
+  --sq-highlight: rgba(100, 149, 237, 0.25);
+  --sq-check: rgba(239, 68, 68, 0.45);
+  --sq-last-move: rgba(112, 146, 124, 0.25);
   
   /* Typography */
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -43,7 +42,7 @@
 
 body {
   font-family: var(--font-body);
-  background: radial-gradient(circle at 50% 50%, var(--bg-gradient-end), var(--bg-gradient-start));
+  background: radial-gradient(circle at 50% 50%, var(--bg-gradient-start), var(--bg-gradient-end));
   color: var(--text-primary);
   min-height: 100vh;
   min-height: -webkit-fill-available;
@@ -62,16 +61,16 @@ html {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(112, 146, 124, 0.08);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(112, 146, 124, 0.25);
   border-radius: 4px;
   transition: background 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(112, 146, 124, 0.4);
 }
 
 /* Premium Animations */
@@ -567,17 +566,15 @@ html {
 .logo-icon {
   font-size: 26px;
 }
-
 .logo-title {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, white 40%, var(--accent-gold));
+  background: linear-gradient(135deg, var(--text-primary) 40%, var(--accent-gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
 .auth-section {
   display: flex;
   align-items: center;
@@ -610,7 +607,7 @@ html {
 .overlay-screen {
   position: fixed;
   inset: 0;
-  background: rgba(4, 6, 12, 0.85);
+  background: rgba(236, 234, 227, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 1000;
@@ -633,7 +630,7 @@ html {
   font-size: 28px;
   font-weight: 800;
   margin-bottom: 12px;
-  background: linear-gradient(135deg, white, var(--accent-gold));
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -695,4 +692,10 @@ html {
   .board-outer-ring {
     padding: 4px;
   }
+}
+
+/* Hover style for user games list item */
+.history-item-hover:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
