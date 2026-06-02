@@ -1,0 +1,698 @@
+/* --- Visual Design System & Glassmorphism Tokens --- */
+:root {
+  /* Curated HSL Color Scheme */
+  --bg-dark: hsl(222, 47%, 7%);
+  --bg-gradient-start: hsl(224, 71%, 4%);
+  --bg-gradient-end: hsl(220, 40%, 10%);
+  
+  --panel-glass: rgba(13, 17, 30, 0.65);
+  --panel-glass-border: rgba(255, 255, 255, 0.08);
+  --panel-glass-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  --text-primary: hsl(210, 40%, 98%);
+  --text-secondary: hsl(215, 20%, 65%);
+  --text-muted: hsl(215, 16%, 47%);
+  
+  --accent-gold: hsl(45, 100%, 60%);
+  --accent-gold-glow: rgba(245, 158, 11, 0.45);
+  
+  --accent-emerald: hsl(150, 84%, 40%);
+  --accent-ruby: hsl(350, 84%, 55%);
+  
+  /* Chessboard Squares - Bobby Fischer Series Classic Tournament Vinyl */
+  --sq-light: #ECECD7; /* Vinyl cream */
+  --sq-dark: #13503B;  /* Tournament forest green */
+  --sq-selected: rgba(245, 158, 11, 0.35);
+  --sq-highlight: rgba(147, 197, 253, 0.3);
+  --sq-check: rgba(239, 68, 68, 0.55);
+  --sq-last-move: rgba(16, 185, 129, 0.25);
+  
+  /* Typography */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Global Reset & Scrolling behavior */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-body);
+  background: radial-gradient(circle at 50% 50%, var(--bg-gradient-end), var(--bg-gradient-start));
+  color: var(--text-primary);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Premium Animations */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px var(--sq-check); }
+  50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes boardFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Glassmorphism Panel Class */
+.glass-panel {
+  background: var(--panel-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-glass-border);
+  box-shadow: var(--panel-glass-glow);
+  border-radius: 16px;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Main Container Layout */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+}
+
+/* Responsive Grid Layout for Game Area */
+.game-area {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 950px;
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .game-area {
+    grid-template-columns: minmax(360px, 500px) 1fr;
+    align-items: start;
+  }
+}
+
+/* Chessboard Styling */
+.chessboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  animation: boardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.board-outer-ring {
+  background-color: #ECECD7; /* Vinyl Board Cream matching light squares */
+  border-radius: 4px; /* Classic square corners for vinyl roll-up board */
+  border: 1px solid #C4C4B0;
+  display: grid;
+  grid-template-columns: 24px 1fr 24px;
+  grid-template-rows: 24px 1fr 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1 / 1;
+}
+
+.border-corner {
+  pointer-events: none;
+}
+
+.border-files {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.border-ranks {
+  display: grid;
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.border-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111; /* Solid black high-contrast label coordinates */
+  text-transform: lowercase;
+}
+
+.chessboard {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  border: 2px solid #000000; /* Solid black division frame */
+  position: relative;
+}
+
+.square {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.square.light {
+  background-color: var(--sq-light);
+}
+
+.square.dark {
+  background-color: var(--sq-dark);
+}
+
+/* Selected piece style */
+.square.selected {
+  background-color: var(--sq-selected) !important;
+}
+
+/* Last move highlights */
+.square.last-move {
+  background-color: var(--sq-last-move);
+}
+
+/* Check highlighting */
+.square.check {
+  background-color: var(--sq-check) !important;
+  animation: pulseGlow 1.5s infinite;
+  z-index: 10;
+}
+
+/* Move dots (dots showing where pieces can go) */
+.move-hint {
+  width: 24%;
+  height: 24%;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.move-hint-capture {
+  width: 80%;
+  height: 80%;
+  border: 4px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Chess piece rendering */
+.chess-piece {
+  width: 92%;
+  height: 92%;
+  cursor: grab;
+  z-index: 2;
+  transition: transform 0.1s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+}
+
+.chess-piece img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Prevents any stretching/squishing */
+  pointer-events: none; /* Prevents ghost dragging of img itself */
+}
+
+.chess-piece:active {
+  cursor: grabbing;
+  transform: scale(1.08);
+}
+
+/* Dragging visual indicators */
+.chess-piece.dragging {
+  opacity: 0.8;
+  transform: scale(1.15);
+  z-index: 100;
+}
+
+/* Board Coordinates are handled outside by .border-label */
+.coord {
+  display: none;
+}
+
+/* Captured Pieces Indicator */
+.captured-tray {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  margin: 6px 0;
+  width: 100%;
+  max-width: 500px;
+  overflow-x: auto;
+}
+
+.captured-piece {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+}
+
+.captured-score {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  margin-left: auto;
+}
+
+/* Status Banner / Active Turn */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.turn-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.turn-pill.active {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+.turn-pill.white {
+  background: white;
+  color: black;
+}
+
+.turn-pill.black {
+  background: #111;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.turn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.turn-pill.active .turn-dot {
+  background-color: var(--accent-emerald);
+  box-shadow: 0 0 8px var(--accent-emerald);
+}
+
+/* Side Panels Grid Column */
+.sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Copy Game link & Resign Buttons */
+.controls-card {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-code-box {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px 12px;
+  gap: 10px;
+}
+
+.game-code-text {
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 1px;
+}
+
+.copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-btn:hover {
+  color: white;
+}
+
+.copy-btn:active {
+  transform: scale(0.9);
+}
+
+/* Primary Action Buttons */
+.btn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-gold), hsl(35, 100%, 50%));
+  color: black;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: hsl(350, 100%, 75%);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: scale(0.97) translateY(0);
+}
+
+.btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Move Log / PGN Panel */
+.history-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+}
+
+@media (min-width: 768px) {
+  .history-card {
+    height: 320px;
+  }
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.history-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.moves-grid-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.moves-grid {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr;
+  row-gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.move-num {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.move-cell {
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.move-cell:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+/* Authentication Header component */
+.app-header {
+  width: 100%;
+  max-width: 1168px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 26px;
+}
+
+.logo-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, white 40%, var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.auth-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-emerald);
+}
+
+.auth-dot.anon {
+  background-color: var(--text-muted);
+}
+
+/* Draw/Resigned overlay panels */
+.overlay-screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.overlay-modal {
+  max-width: 400px;
+  width: 100%;
+  padding: 30px;
+  text-align: center;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.overlay-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, white, var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.overlay-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Home view (when not in a game) */
+.lobby-view {
+  max-width: 500px;
+  width: 100%;
+  padding: 32px;
+  text-align: center;
+  margin-top: 10%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lobby-hero {
+  font-size: 48px;
+  margin-bottom: 8px;
+  animation: pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.lobby-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(135deg, white, var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lobby-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Responsive adjust for mobile */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 12px;
+  }
+  .app-header {
+    padding-bottom: 12px;
+  }
+  .logo-title {
+    font-size: 18px;
+  }
+  .lobby-title {
+    font-size: 26px;
+  }
+  .board-outer-ring {
+    padding: 4px;
+  }
+}

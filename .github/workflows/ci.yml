@@ -1,0 +1,60 @@
+# ====================================================================
+# GlowChess CI/CD - GitHub Actions Pipeline Config
+# ====================================================================
+# This YAML file defines a workflow that automatically runs on GitHub's servers
+# whenever code is pushed or a Pull Request is opened.
+# 
+# Concepts Covered:
+# 1. Triggers (on): Specifying which Git events kick off the pipeline.
+# 2. Runners (runs-on): The virtual machine environment (Ubuntu Linux).
+# 3. Actions (uses): Reusable pre-packaged tasks shared in the GitHub community.
+# 4. Job Steps (run): Standard shell commands executed inside the container.
+# ====================================================================
+
+name: React Integration & Build Verification
+
+# 1. Pipeline Triggers
+# Specifies that this workflow should run whenever a push or pull request is made
+# targeting the "main" or "master" branch.
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+# 2. Jobs
+# A workflow is made of one or more "jobs" that can run sequentially or concurrently.
+jobs:
+  build-and-verify:
+    # We specify a standard Ubuntu Linux virtual runner.
+    runs-on: ubuntu-latest
+
+    # The sequential steps to execute inside this container:
+    steps:
+      # Step A: Checkout the code
+      # Downloads the repository's git commits so the runner has access to the files.
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      # Step B: Setup Node.js Environment
+      # Installs Node.js v20 on the runner.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm' # Automatically caches node_modules dependencies between runs for speed!
+
+      # Step C: Clean Install Dependencies
+      # Performs a clean install matching the exact package-lock.json specifications.
+      - name: Install Project Dependencies
+        run: npm ci
+
+      # Step D: Compile Production Bundle
+      # Runs the Vite compiler. If there are syntax errors, missing imports,
+      # or compiler warnings, this step will fail, blocking merging of the PR!
+      - name: Build Production Artifacts
+        run: npm run build
+        # We inject mock values during build to prevent build-time crashes if Vite checks variables
+        env:
+          VITE_SUPABASE_URL: "https://mock.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "mock-anon-key"
