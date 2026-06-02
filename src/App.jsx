@@ -56,6 +56,19 @@ export default function App() {
   // This ensures we always have the same rules validator across renders!
   const chessRef = useRef(new Chess());
 
+  const syncEngine = (fen, pgn) => {
+    if (pgn) {
+      try {
+        chessRef.current.loadPgn(pgn);
+      } catch (e) {
+        console.warn("Could not load PGN, falling back to FEN:", e);
+        chessRef.current.load(fen);
+      }
+    } else {
+      chessRef.current.load(fen);
+    }
+  };
+
   // ====================================================================
   // Side-Effect 1: Authentication on Load
   // ====================================================================
@@ -120,8 +133,8 @@ export default function App() {
         setPgn(updatedGame.pgn);
         setGameStatus(updatedGame.status);
         
-        // Load the new FEN position into our local rules engine
-        chessRef.current.load(updatedGame.fen);
+        // Sync the local engine with loaded position and history
+        syncEngine(updatedGame.fen, updatedGame.pgn);
       }
     });
 
@@ -169,8 +182,8 @@ export default function App() {
     setPgn(game.pgn);
     setGameStatus(game.status);
     
-    // Sync the local engine with loaded position
-    chessRef.current.load(game.fen);
+    // Sync the local engine with loaded position and history
+    syncEngine(game.fen, game.pgn);
 
     // Dynamic slot assignment
     const { data: { session } } = await supabase.auth.getSession();
