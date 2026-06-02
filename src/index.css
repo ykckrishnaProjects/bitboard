@@ -20,8 +20,8 @@
   --accent-ruby: hsl(350, 84%, 55%);
   
   /* Chessboard Squares - Bobby Fischer Series Classic Tournament Vinyl */
-  --sq-light: #ECECD7; /* Vinyl cream */
-  --sq-dark: #13503B;  /* Tournament forest green */
+  --sq-light: #F0F0E8; /* Softer vinyl cream */
+  --sq-dark: #70927C;  /* Muted pastel forest/sage green */
   --sq-selected: rgba(245, 158, 11, 0.35);
   --sq-highlight: rgba(147, 197, 253, 0.3);
   --sq-check: rgba(239, 68, 68, 0.55);
@@ -146,9 +146,9 @@ html {
 }
 
 .board-outer-ring {
-  background-color: #ECECD7; /* Vinyl Board Cream matching light squares */
+  background-color: #F0F0E8; /* Vinyl Board Cream matching light squares */
   border-radius: 4px; /* Classic square corners for vinyl roll-up board */
-  border: 1px solid #C4C4B0;
+  border: 1px solid #D5D5C4;
   display: grid;
   grid-template-columns: 24px 1fr 24px;
   grid-template-rows: 24px 1fr 24px;
