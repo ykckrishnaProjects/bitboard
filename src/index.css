@@ -565,11 +565,15 @@ html {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
 .logo-icon {
   font-size: 26px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(-2px);
 }
 .logo-title {
   font-family: var(--font-display);
