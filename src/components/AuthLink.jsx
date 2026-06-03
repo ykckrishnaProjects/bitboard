@@ -1,22 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LogIn, LogOut, User, Sparkles } from 'lucide-react';
-import { signInWithGoogle, signOut } from '../utils/supabaseClient';
+import { signInWithGoogle, signInWithGoogleToken, signOut } from '../utils/supabaseClient';
 
 /**
  * ====================================================================
  * AuthLink Component
  * ====================================================================
- * Renders the top-right authentication status of the user.
- * 
- * React Concepts Covered:
- * 1. Conditional Rendering: Showing different buttons based on the user's auth state.
- * 2. Destructuring Props: Accessing the current `user` object passed from the parent App state.
- * 3. Handling Side Effects: Calling asynchronous authentication functions.
+ * Renders the top-right authentication status of the user, incorporating
+ * Google One-Tap single-click authentication and official sign-in buttons.
  * ====================================================================
  */
 export default function AuthLink({ user, onAuthChange }) {
   
-  // Triggers the Google Auth Sign-in
+  // Triggers the Google Auth Sign-in (Redirect Fallback)
   const handleGoogleSignIn = async () => {
     const { error } = await signInWithGoogle();
     if (error) {
@@ -32,10 +28,51 @@ export default function AuthLink({ user, onAuthChange }) {
     }
   };
 
-  // 1. Not loaded or no user yet: we show a loading or simple spacer
-  if (!user) return null;
+  const isAnonymous = user?.is_anonymous || !user?.email;
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-  const isAnonymous = user.is_anonymous || !user.email;
+  // Google One-Tap & Sign-in Button Initialization
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.google || !isAnonymous || !googleClientId) return;
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response) => {
+          const { user: authedUser, error } = await signInWithGoogleToken(response.credential);
+          if (authedUser) {
+            onAuthChange(authedUser);
+          } else if (error) {
+            console.error('Google One-Tap token sign in failed:', error.message);
+          }
+        },
+        auto_select: false, // Avoid immediately logging users in without their consent on reload
+      });
+
+      // Render official Google Sign-in button into our placeholder container
+      const btnContainer = document.getElementById('google-signin-btn');
+      if (btnContainer) {
+        window.google.accounts.id.renderButton(btnContainer, {
+          theme: 'outline',
+          size: 'medium',
+          shape: 'pill',
+          text: 'signin_with',
+        });
+      }
+
+      // Display the Google One-Tap prompt overlay at the top-right
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.log('One-tap overlay skipped or hidden:', notification.getMomentType());
+        }
+      });
+    } catch (e) {
+      console.warn('Google Identity Client initialization error:', e);
+    }
+  }, [user, isAnonymous, googleClientId]);
+
+  // 1. Not loaded or no user yet: show a placeholder
+  if (!user) return null;
 
   return (
     <div className="auth-section">
@@ -48,15 +85,21 @@ export default function AuthLink({ user, onAuthChange }) {
             <span>Guest Player</span>
           </div>
           
-          <button 
-            className="btn btn-glass" 
-            onClick={handleGoogleSignIn}
-            title="Link Google Account to save game history"
-            style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '20px' }}
-          >
-            <LogIn size={13} />
-            <span>Connect Google</span>
-          </button>
+          {googleClientId ? (
+            // Secure Placeholder container for official Google Button
+            <div id="google-signin-btn" style={{ minHeight: '32px' }}></div>
+          ) : (
+            // Fallback OAuth Button if Client ID is not populated
+            <button 
+              className="btn btn-glass" 
+              onClick={handleGoogleSignIn}
+              title="Link Google Account to save game history"
+              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '20px' }}
+            >
+              <LogIn size={13} />
+              <span>Connect Google</span>
+            </button>
+          )}
         </>
       ) : (
         // Case B: User is fully logged in via Google Auth

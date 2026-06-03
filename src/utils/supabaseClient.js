@@ -49,18 +49,16 @@ export async function signInAnonymously() {
     return { user: null, error };
   }
 }
-
 /**
- * 3. OAuth Google Sign-in
+ * 3. OAuth Google Sign-in (Redirect Fallback)
  * Triggers a browser redirect to Google's authentication provider.
- * Once completed, the user is redirected back to the app with a linked session.
  */
 export async function signInWithGoogle() {
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin, // Returns user back to this domain after login
+        redirectTo: window.location.origin,
       },
     });
     if (error) throw error;
@@ -71,6 +69,23 @@ export async function signInWithGoogle() {
   }
 }
 
+/**
+ * 3b. Google ID Token Sign-in (One-Tap / Single-Click Auth)
+ * Authenticates user directly using signed JWT credential from Google Identity SDK.
+ */
+export async function signInWithGoogleToken(idToken) {
+  try {
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+    if (error) throw error;
+    return { user: data.user, error: null };
+  } catch (error) {
+    console.error('Google ID token auth failure:', error.message);
+    return { user: null, error };
+  }
+}
 /**
  * Helper to log out current session
  */
