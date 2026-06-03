@@ -50,11 +50,14 @@ export default function App() {
   const [players, setPlayers] = useState({ white: null, black: null });
   const [totalGames, setTotalGames] = useState(0);
   const [historyGames, setHistoryGames] = useState([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // --- ENGINE REFERENCE ---
   // We initialize the chess.js engine once and store it in a Ref.
   // This ensures we always have the same rules validator across renders!
   const chessRef = useRef(new Chess());
+  const moveSoundRef = useRef(new Audio('https://lichess1.org/assets/sound/standard/Move.mp3'));
+  const captureSoundRef = useRef(new Audio('https://lichess1.org/assets/sound/standard/Capture.mp3'));
 
   const syncEngine = (fen, pgn) => {
     if (pgn) {
@@ -68,7 +71,16 @@ export default function App() {
       chessRef.current.load(fen);
     }
   };
-
+  const playMoveSound = (isCapture = false) => {
+    try {
+      const audio = isCapture ? captureSoundRef.current : moveSoundRef.current;
+      audio.currentTime = 0; // Rewind in case it was already playing
+      audio.volume = 0.65;
+      audio.play().catch(e => console.log("Audio play blocked by browser policy:", e));
+    } catch (e) {
+      console.warn("Audio playback failed:", e);
+    }
+  };
   // ====================================================================
   // Side-Effect 1: Authentication on Load
   // ====================================================================
@@ -92,6 +104,20 @@ export default function App() {
       };
     }
     initAuth();
+  }, []);
+
+  // ====================================================================
+  // Side-Effect 7: Network status monitoring (Online/Offline)
+  // ====================================================================
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // ====================================================================
@@ -127,8 +153,8 @@ export default function App() {
       // Sync player roles in real-time
       setPlayers({ white: updatedGame.white_player_id, black: updatedGame.black_player_id });
 
-      // Check if received FEN is newer than our local FEN
-      if (updatedGame.fen !== fen) {
+      // Sync FEN, PGN, or Status changes (like resignation) in real-time
+      if (updatedGame.fen !== fen || updatedGame.status !== gameStatus) {
         setFen(updatedGame.fen);
         setPgn(updatedGame.pgn);
         setGameStatus(updatedGame.status);
@@ -144,7 +170,31 @@ export default function App() {
         subscription.unsubscribe();
       }
     };
-  }, [gameCode, fen]);
+  }, [gameCode, fen, gameStatus]);
+
+  // ====================================================================
+  // Side-Effect 5: Catch Up on Focus / Visibility Switch (e.g. Phone Call)
+  // ====================================================================
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && gameCode) {
+        loadGameRoom(gameCode);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [gameCode]);
+
+  // ====================================================================
+  // Side-Effect 6: Trigger Tactile Audio tap on move/capture events
+  // ====================================================================
+  useEffect(() => {
+    if (!gameCode || fen === STARTING_FEN) return;
+    const isCapture = pgn.trim().endsWith('#') || pgn.trim().endsWith('+') || pgn.split(/\s+/).pop().includes('x');
+    playMoveSound(isCapture);
+  }, [fen]);
 
   // ====================================================================
   // Side-Effect 4: Fetch Stats & History on User Load / Room Reset
@@ -340,6 +390,20 @@ export default function App() {
   const handleFlipBoard = () => {
     setBoardOrientation(prev => prev === 'w' ? 'b' : 'w');
   };
+
+  // Toggle fullscreen mode on the chessboard container
+  const handleToggleFullscreen = () => {
+    const container = document.querySelector('.chessboard-container');
+    if (!container) return;
+
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().catch((err) => {
+        console.error(`Error enabling fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
   // Parse moves history strings into simple arrays for PGN display (stripping headers)
   const getMovesList = () => {
     if (!pgn) return [];
@@ -418,6 +482,13 @@ export default function App() {
         <AuthLink user={user} onAuthChange={setUser} />
       </header>
 
+      {/* Online/Offline Connection Interrupt Banner */}
+      {!isOnline && (
+        <div className="offline-banner">
+          <span>🔌 Connection Interrupted. Trying to reconnect...</span>
+        </div>
+      )}
+
       {/* Loading Overlay */}
       {loading && (
         <div className="overlay-screen" style={{ background: 'rgba(4,6,12,0.6)', zIndex: 2000 }}>
@@ -458,10 +529,29 @@ export default function App() {
             <span>Create Chessboard</span>
           </button>
           
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 0 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 0 0 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               Looking to resume a game? Paste the unique share URL into your browser!
             </span>
+            
+            {/* ❓ How to Play Tooltip */}
+            <div className="tooltip-container">
+              <button className="tooltip-trigger">
+                ❓ How to Play & Link Accounts
+              </button>
+              <div className="tooltip-content glass-panel">
+                <h4 style={{ color: 'var(--accent-gold)', marginBottom: '4px', fontSize: '13px' }}>How to Play:</h4>
+                <p style={{ margin: '0 0 8px 0', fontSize: '11px', lineHeight: '1.4', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                  1. Click <strong>Create Chessboard</strong>.<br />
+                  2. Copy the room URL and send it to a friend.<br />
+                  3. Drag or click pieces to move when it is your turn.
+                </p>
+                <h4 style={{ color: 'var(--accent-gold)', marginBottom: '4px', fontSize: '13px' }}>Save History:</h4>
+                <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.4', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                  Click <strong>Connect Google</strong> in the top header to bind your guest games and access your match history on other devices.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* User History List */}
@@ -563,6 +653,13 @@ export default function App() {
                 style={{ flexGrow: 1, padding: '8px 12px', fontSize: '12px' }}
               >
                 🔄 Flip Perspective
+              </button>
+              <button 
+                className="btn btn-glass" 
+                onClick={handleToggleFullscreen}
+                style={{ padding: '8px 12px', fontSize: '12px' }}
+              >
+                📺 Fullscreen
               </button>
               <button 
                 className="btn btn-glass" 

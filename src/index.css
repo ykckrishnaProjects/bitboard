@@ -155,6 +155,7 @@ html {
   width: 100%;
   max-width: 500px;
   aspect-ratio: 1 / 1;
+  transform: translateZ(0); /* Prevent blurred rendering artifacts */
 }
 
 .border-corner {
@@ -206,6 +207,8 @@ html {
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease;
+  transform: translateZ(0); /* Prevent rendering blur bleed from parent filters */
+  backface-visibility: hidden;
 }
 
 .square.light {
@@ -244,11 +247,13 @@ html {
 }
 
 .move-hint-capture {
-  width: 80%;
-  height: 80%;
-  border: 4px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
+  position: absolute;
+  inset: 2px;
+  border: 4px solid rgba(239, 68, 68, 0.5); /* Soft red target ring surrounding the piece */
+  border-radius: 8px;
   pointer-events: none;
+  box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.25);
+  z-index: 1; /* Renders behind the chess piece (z-index 2) so opponent is not scaled down or minimized */
 }
 
 /* Chess piece rendering */
@@ -698,4 +703,90 @@ html {
 .history-item-hover:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Fullscreen mode styling */
+.chessboard-container:fullscreen {
+  background: radial-gradient(circle at 50% 50%, var(--bg-gradient-start), var(--bg-gradient-end)) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px !important;
+  overflow: auto;
+  width: 100vw;
+  height: 100vh;
+}
+
+.chessboard-container:fullscreen .captured-tray {
+  max-width: 600px;
+}
+
+.chessboard-container:fullscreen .board-outer-ring {
+  max-width: min(80vw, 80vh);
+  max-height: min(80vw, 80vh);
+}
+
+/* Offline Banner style */
+.offline-banner {
+  background: var(--accent-ruby);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1168px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
+}
+
+/* Tooltip Container for Lobby */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  align-self: center;
+}
+
+.tooltip-trigger {
+  background: none;
+  border: none;
+  color: var(--accent-gold);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+  outline: none;
+}
+
+.tooltip-trigger:hover {
+  opacity: 0.85;
+}
+
+.tooltip-content {
+  visibility: hidden;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 270px;
+  padding: 16px;
+  border-radius: 12px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  text-align: left;
+  pointer-events: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.tooltip-container:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
 }
