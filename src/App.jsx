@@ -15,6 +15,7 @@ import AuthLink from './components/AuthLink';
 import Chessboard from './components/Chessboard';
 import MoveHistory from './components/MoveHistory';
 import GameControls from './components/GameControls';
+import VoiceController from './components/VoiceController';
 
 // A starting default FEN string representing a standard chess board
 const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -681,6 +682,18 @@ export default function App() {
               onDraw={handleDraw}
               onNewGame={handleStartNewGame}
               disabled={gameStatus !== 'active' || (user?.id !== players.white && user?.id !== players.black)}
+            />
+
+            <VoiceController 
+              onMakeMove={handleMakeMove}
+              onResign={handleResign}
+              onDraw={handleDraw}
+              onFlip={handleFlipBoard}
+              disabled={gameStatus !== 'active' || (user?.id !== players.white && user?.id !== players.black)}
+              isUserTurn={gameStatus === 'active' && (
+                (chessRef.current.turn() === 'w' && user?.id === players.white) ||
+                (chessRef.current.turn() === 'b' && user?.id === players.black)
+              )}
             />
 
             {/* Auto-scrolling algebraic moves list panel */}
