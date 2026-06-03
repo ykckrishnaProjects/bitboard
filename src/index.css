@@ -794,3 +794,29 @@ html {
   opacity: 1;
   transform: translateX(-50%) translateY(-4px);
 }
+
+/* Pseudo-fullscreen fallback for iOS mobile devices */
+.chessboard-container.pseudo-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 3000 !important;
+  background: radial-gradient(circle at 50% 50%, var(--bg-gradient-start), var(--bg-gradient-end)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.chessboard-container.pseudo-fullscreen .board-outer-ring {
+  max-width: 90vmin !important;
+  max-height: 90vmin !important;
+}
+
+.chessboard-container.pseudo-fullscreen button {
+  margin-top: 12px;
+}

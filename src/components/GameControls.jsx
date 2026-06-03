@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Flag, Handshake, PlusCircle, Share2 } from 'lucide-react';
+import { Copy, Check, Flag, Handshake, PlusCircle, Share2, AlertCircle } from 'lucide-react';
 
 /**
  * ====================================================================
@@ -7,43 +7,38 @@ import { Copy, Check, Flag, Handshake, PlusCircle, Share2 } from 'lucide-react';
  * ====================================================================
  * Renders the room share code box, copy controls, and game actions
  * (Resign, Propose Draw, Start New Match).
- * 
- * React Concepts Covered:
- * 1. State Hooks: Local state `copied` to manage a temporal success checkmark.
- * 2. Clipboard API: Copying URL shortcode string directly to the operating system's clipboard.
- * 3. Event Handling Props: Passing callback requests up to App.jsx orchestrator.
  * ====================================================================
  */
 export default function GameControls({ gameCode, onResign, onDraw, onNewGame, disabled = false }) {
   const [copied, setCopied] = useState(false);
+  const [activeConfirm, setActiveConfirm] = useState(null); // 'resign' | 'draw' | null
 
   // 1. Copy Shortlink to Clipboard
   const handleCopyLink = () => {
-    // Generate the full direct URL
     const url = `${window.location.origin}/?game=${gameCode.toUpperCase()}`;
-    
-    // Web Clipboard API
     navigator.clipboard.writeText(url)
       .then(() => {
         setCopied(true);
-        // Reset checkmark back to clipboard icon after 2 seconds
         setTimeout(() => setCopied(false), 2000);
       })
       .catch((err) => console.error('Failed to copy link:', err));
   };
 
-  // 2. Double-confirm Resignation
   const handleResignClick = () => {
-    if (confirm('Are you sure you want to resign the game? This will hand victory to your opponent.')) {
-      onResign();
-    }
+    setActiveConfirm('resign');
   };
 
-  // 3. Double-confirm Draw
   const handleDrawClick = () => {
-    if (confirm('Are you sure you want to declare this game a Draw? Both players must agree.')) {
+    setActiveConfirm('draw');
+  };
+
+  const handleConfirmAction = () => {
+    if (activeConfirm === 'resign') {
+      onResign();
+    } else if (activeConfirm === 'draw') {
       onDraw();
     }
+    setActiveConfirm(null);
   };
 
   return (
@@ -106,6 +101,41 @@ export default function GameControls({ gameCode, onResign, onDraw, onNewGame, di
         <PlusCircle size={15} />
         <span>Create New Board</span>
       </button>
+
+      {/* Custom Confirm Modal Overlay */}
+      {activeConfirm && (
+        <div className="overlay-screen">
+          <div className="overlay-modal glass-panel">
+            <div style={{ marginBottom: '16px' }}>
+              <AlertCircle size={48} style={{ color: 'var(--accent-gold)' }} />
+            </div>
+            <h2 className="overlay-title">
+              {activeConfirm === 'resign' ? 'Resign Match?' : 'Declare Draw?'}
+            </h2>
+            <p className="overlay-desc">
+              {activeConfirm === 'resign'
+                ? 'Are you sure you want to resign the game? This will hand victory to your opponent.'
+                : 'Are you sure you want to declare this game a Draw? Both players must agree.'}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '16px' }}>
+              <button 
+                className="btn btn-danger" 
+                style={{ flex: 1 }} 
+                onClick={handleConfirmAction}
+              >
+                Confirm
+              </button>
+              <button 
+                className="btn btn-glass" 
+                style={{ flex: 1 }} 
+                onClick={() => setActiveConfirm(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

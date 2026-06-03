@@ -76,7 +76,9 @@ export default function Chessboard({
   fen, 
   orientation = 'w', 
   onMakeMove, 
-  disabled = false 
+  disabled = false,
+  isFullscreen = false,
+  onToggleFullscreen
 }) {
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
@@ -231,7 +233,7 @@ export default function Chessboard({
   };
 
   return (
-    <div className="chessboard-container">
+    <div className={`chessboard-container ${isFullscreen ? 'pseudo-fullscreen' : ''}`}>
       
       {/* 1. TOP CAPTURED TRAY */}
       <div className="captured-tray">
@@ -368,6 +370,16 @@ export default function Chessboard({
           </>
         )}
       </div>
+
+      {isFullscreen && (
+        <button 
+          className="btn btn-primary" 
+          onClick={onToggleFullscreen}
+          style={{ width: '180px', marginTop: '16px' }}
+        >
+          Close Fullscreen
+        </button>
+      )}
 
     </div>
   );

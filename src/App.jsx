@@ -42,6 +42,7 @@ const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 export default function App() {
   // --- STATE DECLARATIONS ---
   const [user, setUser] = useState(null);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [gameCode, setGameCode] = useState('');
   const [fen, setFen] = useState(STARTING_FEN);
   const [pgn, setPgn] = useState('');
@@ -187,6 +188,33 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [gameCode]);
+
+  // Sync native fullscreen exits with pseudo state
+  useEffect(() => {
+    const handleFsChange = () => {
+      const isFs = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      if (!isFs) {
+        setIsPseudoFullscreen(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    document.addEventListener('mozfullscreenchange', handleFsChange);
+    document.addEventListener('MSFullscreenChange', handleFsChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      document.removeEventListener('mozfullscreenchange', handleFsChange);
+      document.removeEventListener('MSFullscreenChange', handleFsChange);
+    };
+  }, []);
 
   // ====================================================================
   // Side-Effect 6: Trigger Tactile Audio tap on move/capture events
@@ -397,12 +425,38 @@ export default function App() {
     const container = document.querySelector('.chessboard-container');
     if (!container) return;
 
-    if (!document.fullscreenElement) {
-      container.requestFullscreen().catch((err) => {
-        console.error(`Error enabling fullscreen: ${err.message}`);
-      });
+    // Check for native support
+    const requestMethod = container.requestFullscreen || 
+                          container.webkitRequestFullscreen || 
+                          container.mozRequestFullScreen || 
+                          container.msRequestFullscreen;
+
+    if (requestMethod) {
+      const isCurrentlyFs = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+
+      if (!isCurrentlyFs) {
+        requestMethod.call(container).catch((err) => {
+          console.warn(`Native fullscreen blocked, falling back to pseudo-fullscreen: ${err.message}`);
+          setIsPseudoFullscreen(true);
+        });
+      } else {
+        const exitMethod = document.exitFullscreen || 
+                           document.webkitExitFullscreen || 
+                           document.mozCancelFullScreen || 
+                           document.msExitFullscreen;
+        if (exitMethod) {
+          exitMethod.call(document);
+        }
+        setIsPseudoFullscreen(false);
+      }
     } else {
-      document.exitFullscreen();
+      // Direct pseudo-fullscreen fallback for iOS mobile Safari
+      setIsPseudoFullscreen(prev => !prev);
     }
   };
   // Parse moves history strings into simple arrays for PGN display (stripping headers)
@@ -644,6 +698,8 @@ export default function App() {
               orientation={boardOrientation}
               onMakeMove={handleMakeMove}
               disabled={gameStatus !== 'active' || user?.id !== (chessRef.current.turn() === 'w' ? players.white : players.black)}
+              isFullscreen={isPseudoFullscreen}
+              onToggleFullscreen={handleToggleFullscreen}
             />
 
             {/* Helper Utility Buttons directly below the board */}
