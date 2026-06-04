@@ -402,10 +402,25 @@ export default function App() {
     await updateGameMove(gameCode, fen, pgn, newStatus);
   };
 
-  // Declare Draw
+  // Declare Draw (Sends Draw Offer)
   const handleDraw = async () => {
+    const isWhite = user?.id === players.white;
+    const isBlack = user?.id === players.black;
+    if (!isWhite && !isBlack) return; // Spectator cannot offer draw
+    
+    const nextStatus = isWhite ? 'draw_offered_white' : 'draw_offered_black';
+    setGameStatus(nextStatus);
+    await updateGameMove(gameCode, fen, pgn, nextStatus);
+  };
+
+  const handleAcceptDraw = async () => {
     setGameStatus('draw');
     await updateGameMove(gameCode, fen, pgn, 'draw');
+  };
+
+  const handleDeclineDraw = async () => {
+    setGameStatus('active');
+    await updateGameMove(gameCode, fen, pgn, 'active');
   };
 
   // Return to Lobby / Clear URL query
@@ -525,6 +540,70 @@ export default function App() {
     );
   };
 
+  const getDrawOfferOverlay = () => {
+    if (gameStatus !== 'draw_offered_white' && gameStatus !== 'draw_offered_black') return null;
+
+    const isWhite = user?.id === players.white;
+    const isBlack = user?.id === players.black;
+    const isProposer = (gameStatus === 'draw_offered_white' && isWhite) || (gameStatus === 'draw_offered_black' && isBlack);
+    const isOpponent = (gameStatus === 'draw_offered_white' && isBlack) || (gameStatus === 'draw_offered_black' && isWhite);
+
+    if (isProposer) {
+      return (
+        <div className="overlay-screen" style={{ zIndex: 1900 }}>
+          <div className="overlay-modal glass-panel">
+            <div style={{ marginBottom: '16px' }}>
+              <Handshake size={48} style={{ color: 'var(--accent-gold)' }} />
+            </div>
+            <h2 className="overlay-title">Draw Offered</h2>
+            <p className="overlay-desc">Waiting for your opponent to respond to your draw offer...</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn btn-danger" onClick={handleDeclineDraw}>
+                <span>Cancel Offer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isOpponent) {
+      const proposerName = gameStatus === 'draw_offered_white' ? 'White' : 'Black';
+      return (
+        <div className="overlay-screen" style={{ zIndex: 1900 }}>
+          <div className="overlay-modal glass-panel">
+            <div style={{ marginBottom: '16px' }}>
+              <Handshake size={48} style={{ color: 'var(--accent-gold)' }} />
+            </div>
+            <h2 className="overlay-title">Draw Offered</h2>
+            <p className="overlay-desc">{proposerName} player has offered a draw. Do you accept?</p>
+            <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '16px' }}>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAcceptDraw}>
+                <span>Accept</span>
+              </button>
+              <button className="btn btn-danger" style={{ flex: 1 }} onClick={handleDeclineDraw}>
+                <span>Decline</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Spectator view
+    return (
+      <div className="overlay-screen" style={{ zIndex: 1900 }}>
+        <div className="overlay-modal glass-panel">
+          <div style={{ marginBottom: '16px' }}>
+            <Handshake size={48} style={{ color: 'var(--text-secondary)' }} />
+          </div>
+          <h2 className="overlay-title">Draw Offered</h2>
+          <p className="overlay-desc">A draw has been offered. Waiting for opponent's response...</p>
+        </div>
+      </div>
+    );
+  };
+
   // --- MAIN RENDER ---
   return (
     <div className="app-container">
@@ -559,6 +638,9 @@ export default function App() {
 
       {/* 2. GAME OVER OVERLAY */}
       {getGameOverOverlay()}
+
+      {/* 2b. DRAW OFFER OVERLAY */}
+      {getDrawOfferOverlay()}
 
       {!gameCode ? (
         // ====================================================================
