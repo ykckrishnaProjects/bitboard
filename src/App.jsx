@@ -159,14 +159,12 @@ export default function App() {
       setPlayers({ white: updatedGame.white_player_id, black: updatedGame.black_player_id });
 
       // Sync FEN, PGN, or Status changes (like resignation) in real-time
-      if (updatedGame.fen !== fen || updatedGame.status !== gameStatus) {
-        setFen(updatedGame.fen);
-        setPgn(updatedGame.pgn);
-        setGameStatus(updatedGame.status);
-        
-        // Sync the local engine with loaded position and history
-        syncEngine(updatedGame.fen, updatedGame.pgn);
-      }
+      setFen(updatedGame.fen);
+      setPgn(updatedGame.pgn);
+      setGameStatus(updatedGame.status);
+      
+      // Sync the local engine with loaded position and history
+      syncEngine(updatedGame.fen, updatedGame.pgn);
     });
 
     // Cleanup: Unsubscribe when the component unmounts or room changes
@@ -175,7 +173,7 @@ export default function App() {
         subscription.unsubscribe();
       }
     };
-  }, [gameCode, fen, gameStatus]);
+  }, [gameCode]);
 
   // ====================================================================
   // Side-Effect 5: Catch Up on Focus / Visibility Switch (e.g. Phone Call)
