@@ -546,6 +546,16 @@ export default function App() {
     const isProposer = (gameStatus === 'draw_offered_white' && isWhite) || (gameStatus === 'draw_offered_black' && isBlack);
     const isOpponent = (gameStatus === 'draw_offered_white' && isBlack) || (gameStatus === 'draw_offered_black' && isWhite);
 
+    console.log("DEBUG [getDrawOfferOverlay]:", {
+      gameStatus,
+      userId: user?.id,
+      players,
+      isWhite,
+      isBlack,
+      isProposer,
+      isOpponent
+    });
+
     if (isProposer) {
       return (
         <div className="overlay-screen" style={{ zIndex: 1900 }}>

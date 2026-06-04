@@ -198,11 +198,13 @@ export function subscribeToGame(code, onUpdate) {
         filter: `code=eq.${code.toUpperCase()}`, // Wildcard filter on the game's shortcode
       },
       (payload) => {
+        console.log(`DEBUG [Realtime Payload] received for ${code}:`, payload);
         // payload.new contains the updated row fields
         onUpdate(payload.new);
       }
     )
-    .subscribe((status) => {
+    .subscribe((status, err) => {
+      console.log(`DEBUG [Subscription Status Change] for ${code}:`, status, err || '');
       if (status === 'SUBSCRIBED') {
         console.log(`Successfully subscribed to realtime channel for game: ${code}`);
       }
