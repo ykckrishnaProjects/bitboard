@@ -64,7 +64,11 @@ export default function App() {
   const syncEngine = (fen, pgn) => {
     if (pgn) {
       try {
-        chessRef.current.loadPgn(pgn);
+        const enginePgn = pgn
+          .split('\n')
+          .filter(line => !line.trim().startsWith('[DrawOffer'))
+          .join('\n');
+        chessRef.current.loadPgn(enginePgn);
       } catch (e) {
         console.warn("Could not load PGN, falling back to FEN:", e);
         chessRef.current.load(fen);
@@ -72,6 +76,21 @@ export default function App() {
     } else {
       chessRef.current.load(fen);
     }
+  };
+
+  const getDrawOfferFromPgn = (currentPgn) => {
+    if (!currentPgn) return 'none';
+    const match = currentPgn.match(/\[DrawOffer "(white|black|none)"\]/);
+    return match ? match[1] : 'none';
+  };
+
+  const setDrawOfferInPgn = (currentPgn, offer) => {
+    const header = `[DrawOffer "${offer}"]`;
+    if (!currentPgn) return header;
+    if (currentPgn.includes('[DrawOffer "')) {
+      return currentPgn.replace(/\[DrawOffer "(white|black|none)"\]/, header);
+    }
+    return header + '\n' + currentPgn;
   };
   const playMoveSound = (isCapture = false) => {
     try {
@@ -161,7 +180,13 @@ export default function App() {
       // Sync FEN, PGN, or Status changes (like resignation) in real-time
       setFen(updatedGame.fen);
       setPgn(updatedGame.pgn);
-      setGameStatus(updatedGame.status);
+      
+      const drawOffer = getDrawOfferFromPgn(updatedGame.pgn);
+      if (updatedGame.status === 'active' && drawOffer !== 'none') {
+        setGameStatus(drawOffer === 'white' ? 'draw_offered_white' : 'draw_offered_black');
+      } else {
+        setGameStatus(updatedGame.status);
+      }
       
       // Sync the local engine with loaded position and history
       syncEngine(updatedGame.fen, updatedGame.pgn);
@@ -260,7 +285,13 @@ export default function App() {
     setGameCode(game.code);
     setFen(game.fen);
     setPgn(game.pgn);
-    setGameStatus(game.status);
+    
+    const drawOffer = getDrawOfferFromPgn(game.pgn);
+    if (game.status === 'active' && drawOffer !== 'none') {
+      setGameStatus(drawOffer === 'white' ? 'draw_offered_white' : 'draw_offered_black');
+    } else {
+      setGameStatus(game.status);
+    }
     
     // Sync the local engine with loaded position and history
     syncEngine(game.fen, game.pgn);
@@ -378,12 +409,13 @@ export default function App() {
       }
 
       // 1. Instantly update local react state (Optimistic Update)
+      const finalPgn = setDrawOfferInPgn(newPgn, 'none');
       setFen(newFen);
-      setPgn(newPgn);
+      setPgn(finalPgn);
       setGameStatus(newStatus);
 
       // 2. Persist move to Supabase (Broadcasts to opponent instantly!)
-      await updateGameMove(gameCode, newFen, newPgn, newStatus);
+      await updateGameMove(gameCode, newFen, finalPgn, newStatus);
 
     } catch (e) {
       console.error('Invalid move attempt:', e.message);
@@ -406,19 +438,27 @@ export default function App() {
     const isBlack = user?.id === players.black;
     if (!isWhite && !isBlack) return; // Spectator cannot offer draw
     
+    const offerRole = isWhite ? 'white' : 'black';
+    const updatedPgn = setDrawOfferInPgn(pgn, offerRole);
     const nextStatus = isWhite ? 'draw_offered_white' : 'draw_offered_black';
+    
     setGameStatus(nextStatus);
-    await updateGameMove(gameCode, fen, pgn, nextStatus);
+    setPgn(updatedPgn);
+    await updateGameMove(gameCode, fen, updatedPgn, 'active');
   };
 
   const handleAcceptDraw = async () => {
+    const updatedPgn = setDrawOfferInPgn(pgn, 'none');
     setGameStatus('draw');
-    await updateGameMove(gameCode, fen, pgn, 'draw');
+    setPgn(updatedPgn);
+    await updateGameMove(gameCode, fen, updatedPgn, 'draw');
   };
 
   const handleDeclineDraw = async () => {
+    const updatedPgn = setDrawOfferInPgn(pgn, 'none');
     setGameStatus('active');
-    await updateGameMove(gameCode, fen, pgn, 'active');
+    setPgn(updatedPgn);
+    await updateGameMove(gameCode, fen, updatedPgn, 'active');
   };
 
   // Return to Lobby / Clear URL query
