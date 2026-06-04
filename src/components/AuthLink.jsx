@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LogIn, LogOut, User, Sparkles } from 'lucide-react';
 import { signInWithGoogle, signInWithGoogleToken, signOut } from '../utils/supabaseClient';
 
@@ -11,6 +11,7 @@ import { signInWithGoogle, signInWithGoogleToken, signOut } from '../utils/supab
  * ====================================================================
  */
 export default function AuthLink({ user, onAuthChange }) {
+  const [showConfirm, setShowConfirm] = useState(false);
   
   // Triggers the Google Auth Sign-in (Redirect Fallback)
   const handleGoogleSignIn = async () => {
@@ -20,12 +21,15 @@ export default function AuthLink({ user, onAuthChange }) {
     }
   };
 
-  // Triggers the Logout event
-  const handleSignOut = async () => {
-    if (confirm('Are you sure you want to log out? Any anonymous game session may be lost.')) {
-      await signOut();
-      onAuthChange(null);
-    }
+  // Triggers the Logout confirmation modal
+  const handleSignOutClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSignOut = async () => {
+    setShowConfirm(false);
+    await signOut();
+    onAuthChange(null);
   };
 
   const isAnonymous = user?.is_anonymous || !user?.email;
@@ -122,7 +126,7 @@ export default function AuthLink({ user, onAuthChange }) {
 
           <button 
             className="btn btn-glass btn-danger" 
-            onClick={handleSignOut}
+            onClick={handleSignOutClick}
             title="Sign Out"
             style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '20px', background: 'transparent' }}
           >
@@ -130,6 +134,37 @@ export default function AuthLink({ user, onAuthChange }) {
             <span>Logout</span>
           </button>
         </>
+      )}
+
+      {/* Custom Confirm Modal Overlay for Logout */}
+      {showConfirm && (
+        <div className="overlay-screen">
+          <div className="overlay-modal glass-panel">
+            <div style={{ marginBottom: '16px' }}>
+              <LogOut size={48} style={{ color: 'var(--accent-gold)' }} />
+            </div>
+            <h2 className="overlay-title">Log Out?</h2>
+            <p className="overlay-desc">
+              Are you sure you want to log out? Any anonymous game session may be lost.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '16px' }}>
+              <button 
+                className="btn btn-danger" 
+                style={{ flex: 1 }} 
+                onClick={handleConfirmSignOut}
+              >
+                Confirm
+              </button>
+              <button 
+                className="btn btn-glass" 
+                style={{ flex: 1 }} 
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

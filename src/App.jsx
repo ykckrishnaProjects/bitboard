@@ -93,11 +93,14 @@ export default function App() {
       setUser(authedUser);
 
       // Listen for auth state changes (e.g. if the user clicks "Connect Google")
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
           setUser(session.user);
         } else {
           setUser(null);
+          if (event === 'SIGNED_OUT') {
+            window.location.reload();
+          }
         }
       });
 
