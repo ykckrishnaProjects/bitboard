@@ -828,12 +828,8 @@ export default function App() {
             width: '100%',
             boxSizing: 'border-box'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '22px' }}>🤖</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Practice Arena</span>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Train offline against local Stockfish.js</span>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Play Bot</span>
             </div>
 
             <div style={{
@@ -857,7 +853,7 @@ export default function App() {
                   borderRadius: '10px',
                   border: '1px solid rgba(176, 141, 44, 0.15)'
                 }}>
-                  Level {botDifficulty} (Depth {botDifficulty * 2} ply)
+                  Level {botDifficulty}
                 </span>
               </div>
               <input 
