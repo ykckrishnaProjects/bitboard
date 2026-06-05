@@ -1,30 +1,30 @@
 :root {
-  /* Premium Bobby Fischer Light Theme Matching Chessboard Aesthetics */
-  --bg-dark: #ECEAE3;
-  --bg-gradient-start: #F5F4F0;
-  --bg-gradient-end: #E4E1D8;
+  /* Premium Slate Blue & Ivory Theme (Matching Option 1 Logo Branding) */
+  --bg-dark: #E6E3DB;
+  --bg-gradient-start: #FAF8F5;
+  --bg-gradient-end: #E4E0D5;
   
-  --panel-glass: rgba(255, 255, 255, 0.75);
-  --panel-glass-border: rgba(112, 146, 124, 0.22);
-  --panel-glass-glow: 0 12px 32px 0 rgba(112, 146, 124, 0.12);
+  --panel-glass: rgba(255, 255, 255, 0.8);
+  --panel-glass-border: rgba(15, 23, 42, 0.1);
+  --panel-glass-glow: 0 12px 32px 0 rgba(15, 23, 42, 0.04);
   
-  --text-primary: #2C3531;
-  --text-secondary: #4E5E58;
-  --text-muted: #7A8E85;
+  --text-primary: #0F172A; /* Slate 900 / Deep Navy */
+  --text-secondary: #334155; /* Slate 700 */
+  --text-muted: #64748B; /* Slate 500 */
   
   --accent-gold: #B08D2C;
-  --accent-gold-glow: rgba(176, 141, 44, 0.35);
+  --accent-gold-glow: rgba(176, 141, 44, 0.25);
   
-  --accent-emerald: #2E7D32;
-  --accent-ruby: #C62828;
+  --accent-emerald: #1E3A8A; /* Slate dark accent */
+  --accent-ruby: #991B1B;
   
-  /* Chessboard Squares - Bobby Fischer Series Classic Tournament Vinyl */
-  --sq-light: #F0F0E8; /* Softer vinyl cream */
-  --sq-dark: #70927C;  /* Muted pastel forest/sage green */
-  --sq-selected: rgba(176, 141, 44, 0.3);
-  --sq-highlight: rgba(100, 149, 237, 0.25);
+  /* Chessboard Squares - Sleek Slate Blue / Ivory Cream Palette */
+  --sq-light: #F1EFEA; /* Cream */
+  --sq-dark: #2F4858;  /* Deep slate blue */
+  --sq-selected: rgba(176, 141, 44, 0.35);
+  --sq-highlight: rgba(100, 149, 237, 0.3);
   --sq-check: rgba(239, 68, 68, 0.45);
-  --sq-last-move: rgba(112, 146, 124, 0.25);
+  --sq-last-move: rgba(15, 23, 42, 0.12);
   
   /* Typography */
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

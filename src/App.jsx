@@ -757,7 +757,9 @@ export default function App() {
       {/* 1. APP HEADER */}
       <header className="app-header">
         <div className="logo-section">
-          <span className="logo-icon">♞</span>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'translateY(-1px)', color: 'var(--text-primary)', marginRight: '2px' }}>
+            <path d="M19 21H5c0-2.5 1.5-4.5 4-5.5 1.5-.5 2.5-1.5 2.5-3v-1c0-.5-.2-1-.6-1.4l-2.3-2.3C7.8 7.2 7.5 6.2 7.5 5.2V3c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1.5c0 .8.3 1.5.8 2l2.2 2.2c.4.4.6.9.6 1.4v2.5c0 1.5 1 2.5 2.5 3 2.5 1 4 3 4 5.5z" fill="var(--text-primary)" />
+          </svg>
           <span className="logo-title">ChessURL</span>
         </div>
         
