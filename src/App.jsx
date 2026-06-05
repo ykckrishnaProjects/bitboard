@@ -815,14 +815,49 @@ export default function App() {
             <span>Create Chessboard</span>
           </button>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '16px 0 0 0', marginTop: '12px', width: '100%', boxSizing: 'border-box' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left', alignSelf: 'flex-start' }}>🤖 Play Against Bot (Local)</span>
-            
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', boxSizing: 'border-box' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            padding: '16px',
+            borderRadius: '14px',
+            border: '1px solid var(--panel-glass-border)',
+            background: 'rgba(255, 255, 255, 0.45)',
+            boxShadow: '0 4px 20px rgba(112, 146, 124, 0.06)',
+            marginTop: '16px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '22px' }}>🤖</span>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Difficulty Level</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)' }}>
-                  Level {botDifficulty}
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Practice Arena</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Train offline against local Stockfish.js</span>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: 'rgba(112, 146, 124, 0.06)',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1px solid rgba(112, 146, 124, 0.1)',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>Difficulty Level</span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--accent-gold)',
+                  background: 'rgba(176, 141, 44, 0.08)',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(176, 141, 44, 0.15)'
+                }}>
+                  Level {botDifficulty} (Depth {botDifficulty * 2} ply)
                 </span>
               </div>
               <input 
@@ -831,24 +866,50 @@ export default function App() {
                 max="8" 
                 value={botDifficulty} 
                 onChange={(e) => setBotDifficulty(Number(e.target.value))}
-                style={{ flex: 1, cursor: 'pointer', accentColor: 'var(--accent-gold)' }} 
+                style={{
+                  width: '100%',
+                  height: '5px',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  accentColor: 'var(--accent-gold)',
+                  marginTop: '8px',
+                  background: 'rgba(112, 146, 124, 0.15)'
+                }} 
               />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                <span>Lv 1 (Novice)</span>
+                <span>Lv 8 (Grandmaster)</span>
+              </div>
             </div>
             
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
               <button 
                 className="btn btn-glass" 
                 onClick={() => handleStartBotGame('w')}
-                style={{ flex: 1, padding: '10px', fontSize: '12px' }}
+                style={{
+                  padding: '10px',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid rgba(44, 53, 49, 0.12)',
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+                }}
               >
-                <span>Play White</span>
+                <span style={{ fontSize: '12px' }}>⚪</span>
+                <span style={{ fontSize: '12px' }}>Play as White</span>
               </button>
               <button 
-                className="btn btn-glass" 
+                className="btn" 
                 onClick={() => handleStartBotGame('b')}
-                style={{ flex: 1, padding: '10px', fontSize: '12px' }}
+                style={{
+                  padding: '10px',
+                  background: 'var(--text-primary)',
+                  border: '1px solid var(--text-primary)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
               >
-                <span>Play Black</span>
+                <span style={{ fontSize: '12px' }}>⚫</span>
+                <span style={{ color: '#FFFFFF', fontSize: '12px' }}>Play as Black</span>
               </button>
             </div>
           </div>
