@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /?game=   # Disallow crawling unique private game room link parameters to protect privacy
+Sitemap: https://chessurl.com/sitemap.xml
