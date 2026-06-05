@@ -53,11 +53,13 @@ export default function App() {
   const [totalGames, setTotalGames] = useState(0);
   const [historyGames, setHistoryGames] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [botDifficulty, setBotDifficulty] = useState(3); // Default Level 3
 
   // --- ENGINE REFERENCE ---
   // We initialize the chess.js engine once and store it in a Ref.
   // This ensures we always have the same rules validator across renders!
   const chessRef = useRef(new Chess());
+  const stockfishRef = useRef(null);
   const moveSoundRef = useRef(new Audio('https://lichess1.org/assets/sound/standard/Move.mp3'));
   const captureSoundRef = useRef(new Audio('https://lichess1.org/assets/sound/standard/Capture.mp3'));
 
@@ -73,6 +75,91 @@ export default function App() {
       chessRef.current.load(fen);
     }
   };
+
+  const initStockfish = () => {
+    if (stockfishRef.current) return stockfishRef.current;
+    
+    try {
+      const worker = new Worker('/stockfish.js');
+      worker.postMessage('uci');
+      worker.postMessage('isready');
+      stockfishRef.current = worker;
+      return worker;
+    } catch (e) {
+      console.error('Failed to initialize Stockfish worker:', e);
+      return null;
+    }
+  };
+
+  const makeBotMove = () => {
+    const worker = initStockfish();
+    if (!worker) return;
+    
+    worker.onmessage = (event) => {
+      const line = event.data;
+      if (line.startsWith('bestmove')) {
+        const parts = line.split(' ');
+        const bestMove = parts[1];
+        if (bestMove && bestMove !== '(none)') {
+          applyBotMove(bestMove);
+        }
+      }
+    };
+    
+    worker.postMessage(`position fen ${chessRef.current.fen()}`);
+    const searchDepth = botDifficulty * 2;
+    worker.postMessage(`go depth ${searchDepth}`);
+  };
+
+  const applyBotMove = (bestMove) => {
+    try {
+      const from = bestMove.slice(0, 2);
+      const to = bestMove.slice(2, 4);
+      const promotion = bestMove.length > 4 ? bestMove[4] : undefined;
+      
+      const move = chessRef.current.move({ from, to, promotion });
+      if (!move) return;
+      
+      playMoveSound(!!move.captured);
+      
+      const newFen = chessRef.current.fen();
+      const newPgn = chessRef.current.pgn();
+      
+      let newStatus = 'active';
+      if (chessRef.current.isCheckmate()) {
+        newStatus = chessRef.current.turn() === 'w' ? 'checkmate_black' : 'checkmate_white';
+      } else if (
+        chessRef.current.isDraw() ||
+        chessRef.current.isStalemate() ||
+        chessRef.current.isThreefoldRepetition() ||
+        chessRef.current.isInsufficientMaterial()
+      ) {
+        newStatus = 'draw';
+      }
+      
+      setFen(newFen);
+      setPgn(newPgn);
+      setGameStatus(newStatus);
+    } catch (e) {
+      console.error('Failed to apply bot move:', e);
+    }
+  };
+
+  // Bot calculation trigger side-effect
+  useEffect(() => {
+    if (gameCode !== 'local_bot' || gameStatus !== 'active') return;
+    
+    const activeColor = chessRef.current.turn();
+    const isBotTurn = (activeColor === 'w' && players.white === 'bot') || 
+                      (activeColor === 'b' && players.black === 'bot');
+                      
+    if (isBotTurn) {
+      const timer = setTimeout(() => {
+        makeBotMove();
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [gameCode, gameStatus, fen, players]);
   const playMoveSound = (isCapture = false) => {
     try {
       const audio = isCapture ? captureSoundRef.current : moveSoundRef.current;
@@ -151,7 +238,7 @@ export default function App() {
   // Listens to database UPDATE broadcasts. Whenever the opponent makes a move,
   // this hook fires and updates our local board without refreshing!
   useEffect(() => {
-    if (!gameCode) return;
+    if (!gameCode || gameCode === 'local_bot') return;
 
     // Establish WebSocket subscription
     const subscription = subscribeToGame(gameCode, (updatedGame) => {
@@ -186,7 +273,7 @@ export default function App() {
   // ====================================================================
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && gameCode) {
+      if (document.visibilityState === 'visible' && gameCode && gameCode !== 'local_bot') {
         loadGameRoom(gameCode);
       }
     };
@@ -347,6 +434,20 @@ export default function App() {
     setLoading(false);
   };
 
+  const handleStartBotGame = (userColor) => {
+    setGameCode('local_bot');
+    setFen(STARTING_FEN);
+    setPgn('');
+    setGameStatus('active');
+    chessRef.current.reset();
+    
+    setBoardOrientation(userColor);
+    setPlayers(userColor === 'w' 
+      ? { white: user?.id || 'player', black: 'bot' }
+      : { white: 'bot', black: user?.id || 'player' }
+    );
+  };
+
   // ====================================================================
   // CHESS GAMEPLAY HANDLERS
   // ====================================================================
@@ -357,13 +458,23 @@ export default function App() {
       const activeColor = chessRef.current.turn(); // 'w' or 'b'
       const isWhiteTurn = activeColor === 'w';
 
-      if (isWhiteTurn && user?.id !== players.white) {
-        console.warn("Move blocked: It is White's turn, but you are not the White player.");
-        return;
-      }
-      if (!isWhiteTurn && user?.id !== players.black) {
-        console.warn("Move blocked: It is Black's turn, but you are not the Black player.");
-        return;
+      if (gameCode !== 'local_bot') {
+        if (isWhiteTurn && user?.id !== players.white) {
+          console.warn("Move blocked: It is White's turn, but you are not the White player.");
+          return;
+        }
+        if (!isWhiteTurn && user?.id !== players.black) {
+          console.warn("Move blocked: It is Black's turn, but you are not the Black player.");
+          return;
+        }
+      } else {
+        // Prevent moving when it is the bot's turn
+        const isBotTurn = (isWhiteTurn && players.white === 'bot') ||
+                          (!isWhiteTurn && players.black === 'bot');
+        if (isBotTurn) {
+          console.warn("Move blocked: It is the Bot's turn to calculate!");
+          return;
+        }
       }
 
       // Validate move locally using chess.js engine
@@ -394,8 +505,10 @@ export default function App() {
       setPgn(newPgn);
       setGameStatus(newStatus);
 
-      // 2. Persist move to Supabase (Broadcasts to opponent instantly!) and reset draw offer
-      await updateGameMove(gameCode, newFen, newPgn, newStatus, { draw_offer: 'none' });
+      // 2. Persist move to Supabase (Broadcasts to opponent instantly!) and reset draw offer (Skip for bot)
+      if (gameCode !== 'local_bot') {
+        await updateGameMove(gameCode, newFen, newPgn, newStatus, { draw_offer: 'none' });
+      }
 
     } catch (e) {
       console.error('Invalid move attempt:', e.message);
@@ -409,11 +522,17 @@ export default function App() {
     const newStatus = currentTurn === 'w' ? 'resigned_white' : 'resigned_black';
     
     setGameStatus(newStatus);
-    await updateGameMove(gameCode, fen, pgn, newStatus);
+    if (gameCode !== 'local_bot') {
+      await updateGameMove(gameCode, fen, pgn, newStatus);
+    }
   };
 
   // Declare Draw (Sends Draw Offer)
   const handleDraw = async () => {
+    if (gameCode === 'local_bot') {
+      setGameStatus('draw');
+      return;
+    }
     const isWhite = user?.id === players.white;
     const isBlack = user?.id === players.black;
     if (!isWhite && !isBlack) return; // Spectator cannot offer draw
@@ -443,6 +562,11 @@ export default function App() {
     setPgn('');
     setGameStatus('active');
     chessRef.current.reset();
+    
+    if (stockfishRef.current) {
+      stockfishRef.current.terminate();
+      stockfishRef.current = null;
+    }
   };
 
   // Toggle visual board perspective (flip A-H / 1-8 coords)
@@ -685,11 +809,49 @@ export default function App() {
           <button 
             className="btn btn-primary" 
             onClick={handleStartNewGame}
-            style={{ padding: '14px 28px', fontSize: '16px', marginTop: '10px' }}
+            style={{ padding: '14px 28px', fontSize: '16px', marginTop: '10px', width: '100%' }}
           >
             <Compass size={18} />
             <span>Create Chessboard</span>
           </button>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '16px 0 0 0', marginTop: '12px', width: '100%', boxSizing: 'border-box' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left', alignSelf: 'flex-start' }}>🤖 Play Against Bot (Local)</span>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Difficulty Level</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)' }}>
+                  Level {botDifficulty}
+                </span>
+              </div>
+              <input 
+                type="range" 
+                min="1" 
+                max="8" 
+                value={botDifficulty} 
+                onChange={(e) => setBotDifficulty(Number(e.target.value))}
+                style={{ flex: 1, cursor: 'pointer', accentColor: 'var(--accent-gold)' }} 
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button 
+                className="btn btn-glass" 
+                onClick={() => handleStartBotGame('w')}
+                style={{ flex: 1, padding: '10px', fontSize: '12px' }}
+              >
+                <span>Play White</span>
+              </button>
+              <button 
+                className="btn btn-glass" 
+                onClick={() => handleStartBotGame('b')}
+                style={{ flex: 1, padding: '10px', fontSize: '12px' }}
+              >
+                <span>Play Black</span>
+              </button>
+            </div>
+          </div>
           
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 0 0 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
