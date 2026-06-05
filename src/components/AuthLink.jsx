@@ -34,10 +34,36 @@ export default function AuthLink({ user, onAuthChange }) {
 
   const isAnonymous = user?.is_anonymous || !user?.email;
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+
+  // Load Google Identity Services script dynamically to prevent unused JavaScript diagnostics on initial load
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isAnonymous || !googleClientId) return;
+    
+    const scriptId = 'google-gsi-client';
+    const existingScript = document.getElementById(scriptId);
+
+    if (window.google?.accounts?.id) {
+      setScriptLoaded(true);
+      return;
+    }
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setScriptLoaded(true);
+      document.body.appendChild(script);
+    } else {
+      existingScript.addEventListener('load', () => setScriptLoaded(true));
+    }
+  }, [isAnonymous, googleClientId]);
 
   // Google One-Tap & Sign-in Button Initialization
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.google || !isAnonymous || !googleClientId) return;
+    if (typeof window === 'undefined' || !window.google || !isAnonymous || !googleClientId || !scriptLoaded) return;
 
     try {
       window.google.accounts.id.initialize({
@@ -73,7 +99,7 @@ export default function AuthLink({ user, onAuthChange }) {
     } catch (e) {
       console.warn('Google Identity Client initialization error:', e);
     }
-  }, [user, isAnonymous, googleClientId]);
+  }, [user, isAnonymous, googleClientId, scriptLoaded]);
 
   // 1. Not loaded or no user yet: show a placeholder
   if (!user) return null;
