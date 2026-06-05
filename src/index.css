@@ -567,7 +567,7 @@ html {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 1px;
 }
 
 .logo-icon {

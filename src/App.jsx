@@ -758,7 +758,7 @@ export default function App() {
       <header className="app-header">
         <div className="logo-section">
           <span className="logo-icon">♞</span>
-          <span className="logo-title">BitBoard</span>
+          <span className="logo-title">ChessURL</span>
         </div>
         
         {/* Supabase Authenticator Link Component */}
